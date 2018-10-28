@@ -1,0 +1,22 @@
+
+**** Build of configuration Debug for project StereoLoop ****
+
+"C:\\ti\\ccsv7\\utils\\bin\\gmake" -k -j 6 all -O 
+'Building file: ../vectors.asm'
+'Invoking: C6000 Compiler'
+"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/bin/cl6x" -mv6713 --abi=coffabi -g --include_path="R:/ECE4703_B18/StereoLoop" --include_path="C:/ti/ccsv7/tools/compiler/c6000_7.4.24/include" --include_path="R:/ECE4703_B18/C6xCSL/include" --include_path="R:/ECE4703_B18/DSK6713/c6000/dsk6713/include" --diag_wrap=off --diag_warning=225 --display_error_number --mem_model:const=far --mem_model:data=far --preproc_with_compile --preproc_dependency="vectors.d"  "../vectors.asm"
+'Finished building: ../vectors.asm'
+' '
+'Building file: ../stereoloop.c'
+'Invoking: C6000 Compiler'
+"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/bin/cl6x" -mv6713 --abi=coffabi -g --include_path="R:/ECE4703_B18/StereoLoop" --include_path="C:/ti/ccsv7/tools/compiler/c6000_7.4.24/include" --include_path="R:/ECE4703_B18/C6xCSL/include" --include_path="R:/ECE4703_B18/DSK6713/c6000/dsk6713/include" --diag_wrap=off --diag_warning=225 --display_error_number --mem_model:const=far --mem_model:data=far --preproc_with_compile --preproc_dependency="stereoloop.d"  "../stereoloop.c"
+'Finished building: ../stereoloop.c'
+' '
+'Building target: StereoLoop.out'
+'Invoking: C6000 Linker'
+"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/bin/cl6x" -mv6713 --abi=coffabi -g --diag_wrap=off --diag_warning=225 --display_error_number --mem_model:const=far --mem_model:data=far -z --stack_size=0x400 -m"StereoLoop.map" --heap_size=0x400 -i"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/lib" -i"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/include" --reread_libs --warn_sections --diag_wrap=off --display_error_number --xml_link_info="StereoLoop_linkInfo.xml" --rom_model -o "StereoLoop.out" "./stereoloop.obj" "./vectors.obj" "../C6713.cmd"  -l"R:/ECE4703_B18/C6xCSL/lib_3x/csl6713.lib" -l"R:/ECE4703_B18/DSK6713/c6000/dsk6713/lib/dsk6713bsl.lib" -l"C:/Users/gentov/Downloads/rts6700.lib" 
+<Linking>
+'Finished building target: StereoLoop.out'
+' '
+
+**** Build Finished ****
