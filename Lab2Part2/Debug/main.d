@@ -21,6 +21,7 @@ main.obj: R:/ECE4703_B18/C6xCSL/include/csl_timer.h
 main.obj: R:/ECE4703_B18/C6xCSL/include/csl_timerhal.h
 main.obj: R:/ECE4703_B18/C6xCSL/include/csl_mcbsp.h
 main.obj: R:/ECE4703_B18/C6xCSL/include/csl_mcbsphal.h
+main.obj: R:/ECE4703_B18/DSK6713/c6000/dsk6713/include/dsk6713_led.h
 main.obj: R:/ECE4703_B18/DSK6713/c6000/dsk6713/include/dsk6713.h
 main.obj: R:/ECE4703_B18/DSK6713/c6000/dsk6713/include/dsk6713_aic23.h
 main.obj: ../fdacoefs.h
@@ -46,6 +47,7 @@ R:/ECE4703_B18/C6xCSL/include/csl_timer.h:
 R:/ECE4703_B18/C6xCSL/include/csl_timerhal.h: 
 R:/ECE4703_B18/C6xCSL/include/csl_mcbsp.h: 
 R:/ECE4703_B18/C6xCSL/include/csl_mcbsphal.h: 
+R:/ECE4703_B18/DSK6713/c6000/dsk6713/include/dsk6713_led.h: 
 R:/ECE4703_B18/DSK6713/c6000/dsk6713/include/dsk6713.h: 
 R:/ECE4703_B18/DSK6713/c6000/dsk6713/include/dsk6713_aic23.h: 
 ../fdacoefs.h: 
