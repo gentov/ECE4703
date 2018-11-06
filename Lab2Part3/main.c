@@ -20,8 +20,12 @@
 DSK6713_AIC23_CodecHandle hCodec;                           // Codec handle
 DSK6713_AIC23_Config config = DSK6713_AIC23_DEFAULTCONFIG;  // Codec configuration with default settings
 
-float tempOmega[11];
-int index = 0;
+float tempOmega[5][3] = 0;
+float gain[6];
+float bcoeffs [5][3];
+float acoeffs [5][3];
+int index[5] = { 0, 0, 0, 0, 0};
+float stageOut;
 float filterOut;
 interrupt void serialPortRcvISR(void);
 
@@ -50,11 +54,86 @@ void main()
     IRQ_enable(IRQ_EVT_RINT1);      // Enables the event
     IRQ_globalEnable();             // Globally enables interrupts
     int k;
-    for(k = 0; k< NL; k++)
-        tempOmega[k] = 0.0;
+//    for(k = 0; k< MWSPT_NSEC; k++)
+//        tempOmega[z][k] = {0.0, 0.0, 0.0};
     while(1)                        // main loop - do nothing but wait for interrupts
     {
     }
+}
+//chopping the HEADer file.... get it....kill me please
+void guillotine1()
+{
+    int i, k;
+    for(i = 0; i < MWSPT_NSEC; i++)
+    {
+        if(i%2 == 0)//if it's even
+        {
+            gain[i/2] = NUM[i][0];
+        }
+
+        else //if it's odd
+        {
+            for(k = 0; k < 3; k++){
+                bcoeffs[i/2][k] = NUM[i][k];
+            }
+        }
+    }
+}
+
+void guillotine2()
+{
+    int i, k;
+    for(i = 0; i < MWSPT_NSEC; i++)
+    {
+        if (i % 2 == 1) //if it's odd
+        {
+            for(k = 0; k < 3; k++){
+                acoeffs[i/2][k] = DEN[i][k];
+            }
+        }
+    }
+}
+
+//have to run this for as many stages as we have
+float filterGenerator(short startingVal, int stageNumber)
+{
+    float output = 0;
+    int k = 0;
+    short tempVal = startingVal;
+    //have to multiply input by the gain
+     tempVal *= gain[stageNumber];
+    //in a for loop as large as the array of gains
+
+
+     //circular indexing
+      index[stageNumber]++;
+      index[stageNumber] = index[stageNumber]%3;
+      tempOmega[stageNumber][index[stageNumber]] = 0;
+
+
+        for(k; k<3; k++)
+        {
+            int arrayIndex = index[stageNumber] -  k;
+            if (arrayIndex < 0) arrayIndex += 3;
+            tempOmega[stageNumber][index[stageNumber]] += ((tempOmega[stageNumber][arrayIndex] * acoeffs[stageNumber][arrayIndex]));
+            tempOmega[stageNumber][index[stageNumber]] *= -1;
+        }
+
+        tempOmega[stageNumber][index[stageNumber]] += startingVal; // change
+
+
+
+        int j;
+        for(j = 0; j < 3; j++)
+        {
+            int arrayIndex2 = index[stageNumber] -  j;
+            if (arrayIndex2 < 0) arrayIndex2 += 3;
+            output += (bcoeffs[stageNumber][arrayIndex2]*tempOmega[stageNumber][index[stageNumber]]);
+        }
+
+
+        return output;
+
 }
 
 interrupt void serialPortRcvISR()
@@ -66,38 +145,15 @@ interrupt void serialPortRcvISR()
     // Note that left channel is in temp.channel[1]
 
     float rChann = (((float) (temp.channel[0]))/32768); // Cast to a float, then divide by 32768 (16 bit datatype)
-
-    //circular indexing
-     index++;
-     index = index%NL;
-     tempOmega[index] = 0;
-
-    int i;
-    // compute filter output
-    for(i = 1; i < NL; i++)
+    float lChann = (((float) (temp.channel[1]))/32768); // Cast to a float, then divide by 32768 (16 bit datatype)
+    int i = 0;
+    filterOut = rChann;
+    for(i; i<5; i++)
     {
-        int arrayIndex = index -  i;
-        if (arrayIndex < 0) arrayIndex += NL;
-        tempOmega[index] += ((tempOmega[arrayIndex] * DEN[i]));
-        tempOmega[index] *= -1;
+         filterOut = filterGenerator(filterOut,i);
+
     }
-
-    tempOmega[index] += rChann;
-
-    int j;
-    for(j = 0; j < NL; j++)
-    {
-        int arrayIndex2 = index -  j;
-        if (arrayIndex2 < 0) arrayIndex2 += NL;
-        filterOut += (NUM[j]*tempOmega[arrayIndex2]);
-    }
-
-    if (filterOut > 1.0)
-      {
-          DSK6713_LED_on(2);
-      }
-
-    rChann = filterOut * 32768; //multiply it by 32768 * 0.5 (stop clippin from dc offset)
+    rChann = filterOut * 32768 * gain[10]; //multiply it by 32768 * 0.5 (stop clippin from dc offset)
     short s = (short) (rChann); //cast to a float
     temp.channel[0] = s; //set the right channel to the new value
     MCBSP_write(DSK6713_AIC23_DATAHANDLE, temp.combo); //ship it
