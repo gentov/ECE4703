@@ -26,41 +26,10 @@ float bcoeffs [5][3];
 float acoeffs [5][3];
 int index[5] = { 0, 0, 0, 0, 0};
 float stageOut;
-float filterOut;
+float filterOut = 0;
 interrupt void serialPortRcvISR(void);
 
-void main()
-{
-
-    DSK6713_init();     // Initialize the board support library, must be called first
-    hCodec = DSK6713_AIC23_openCodec(0, &config);   // open codec and get handle
-
-    DSK6713_LED_init(); // to use LEDs
-
-    // Configure buffered serial ports for 32 bit operation
-    // This allows transfer of both right and left channels in one read/write
-    MCBSP_FSETS(SPCR1, RINTM, FRM);
-    MCBSP_FSETS(SPCR1, XINTM, FRM);
-    MCBSP_FSETS(RCR1, RWDLEN1, 32BIT);
-    MCBSP_FSETS(XCR1, XWDLEN1, 32BIT);
-
-    // set codec sampling frequency, change to 16 for Nyquist rate of 11k
-    DSK6713_AIC23_setFreq(hCodec, DSK6713_AIC23_FREQ_16KHZ);
-
-    // interrupt setup
-    IRQ_globalDisable();            // Globally disables interrupts
-    IRQ_nmiEnable();                // Enables the NMI interrupt
-    IRQ_map(IRQ_EVT_RINT1,15);      // Maps an event to a physical interrupt
-    IRQ_enable(IRQ_EVT_RINT1);      // Enables the event
-    IRQ_globalEnable();             // Globally enables interrupts
-    int k;
-//    for(k = 0; k< MWSPT_NSEC; k++)
-//        tempOmega[z][k] = {0.0, 0.0, 0.0};
-    while(1)                        // main loop - do nothing but wait for interrupts
-    {
-    }
-}
-//chopping the HEADer file.... get it....kill me please
+//chopping the HEADer file.... get it....
 void guillotine1()
 {
     int i, k;
@@ -94,12 +63,45 @@ void guillotine2()
     }
 }
 
+void main()
+{
+
+    DSK6713_init();     // Initialize the board support library, must be called first
+    hCodec = DSK6713_AIC23_openCodec(0, &config);   // open codec and get handle
+
+    DSK6713_LED_init(); // to use LEDs
+
+    // Configure buffered serial ports for 32 bit operation
+    // This allows transfer of both right and left channels in one read/write
+    MCBSP_FSETS(SPCR1, RINTM, FRM);
+    MCBSP_FSETS(SPCR1, XINTM, FRM);
+    MCBSP_FSETS(RCR1, RWDLEN1, 32BIT);
+    MCBSP_FSETS(XCR1, XWDLEN1, 32BIT);
+
+    // set codec sampling frequency, change to 16 for Nyquist rate of 11k
+    DSK6713_AIC23_setFreq(hCodec, DSK6713_AIC23_FREQ_16KHZ);
+
+    // interrupt setup
+    IRQ_globalDisable();            // Globally disables interrupts
+    IRQ_nmiEnable();                // Enables the NMI interrupt
+    IRQ_map(IRQ_EVT_RINT1,15);      // Maps an event to a physical interrupt
+    IRQ_enable(IRQ_EVT_RINT1);      // Enables the event
+    IRQ_globalEnable();             // Globally enables interrupts
+   // int k;
+    guillotine1();
+    guillotine2();
+//    for(k = 0; k< MWSPT_NSEC; k++)
+//        tempOmega[z][k] = {0.0, 0.0, 0.0};
+    while(1)                        // main loop - do nothing but wait for interrupts
+    {
+    }
+}
+
 //have to run this for as many stages as we have
-float filterGenerator(short startingVal, int stageNumber)
+float filterGenerator(float startingVal, int stageNumber)
 {
     float output = 0;
-    int k = 0;
-    short tempVal = startingVal;
+    float tempVal = startingVal;
     //have to multiply input by the gain
      tempVal *= gain[stageNumber];
     //in a for loop as large as the array of gains
@@ -110,16 +112,15 @@ float filterGenerator(short startingVal, int stageNumber)
       index[stageNumber] = index[stageNumber]%3;
       tempOmega[stageNumber][index[stageNumber]] = 0;
 
-
-        for(k; k<3; k++)
+        int k;
+        for(k = 1; k<3; k++)
         {
             int arrayIndex = index[stageNumber] -  k;
             if (arrayIndex < 0) arrayIndex += 3;
-            tempOmega[stageNumber][index[stageNumber]] += ((tempOmega[stageNumber][arrayIndex] * acoeffs[stageNumber][arrayIndex]));
-            tempOmega[stageNumber][index[stageNumber]] *= -1;
+            tempOmega[stageNumber][index[stageNumber]] += ((tempOmega[stageNumber][arrayIndex] * acoeffs[stageNumber][k]));
         }
-
-        tempOmega[stageNumber][index[stageNumber]] += startingVal; // change
+        tempOmega[stageNumber][index[stageNumber]] *= -1;
+        tempOmega[stageNumber][index[stageNumber]] += tempVal; // change
 
 
 
@@ -128,7 +129,7 @@ float filterGenerator(short startingVal, int stageNumber)
         {
             int arrayIndex2 = index[stageNumber] -  j;
             if (arrayIndex2 < 0) arrayIndex2 += 3;
-            output += (bcoeffs[stageNumber][arrayIndex2]*tempOmega[stageNumber][index[stageNumber]]);
+            output += (bcoeffs[stageNumber][j]*tempOmega[stageNumber][arrayIndex2]);
         }
 
 
@@ -145,15 +146,14 @@ interrupt void serialPortRcvISR()
     // Note that left channel is in temp.channel[1]
 
     float rChann = (((float) (temp.channel[0]))/32768); // Cast to a float, then divide by 32768 (16 bit datatype)
-    float lChann = (((float) (temp.channel[1]))/32768); // Cast to a float, then divide by 32768 (16 bit datatype)
-    int i = 0;
+    int i;
     filterOut = rChann;
-    for(i; i<5; i++)
+    for(i = 0; i<5; i++)
     {
          filterOut = filterGenerator(filterOut,i);
 
     }
-    rChann = filterOut * 32768 * gain[10]; //multiply it by 32768 * 0.5 (stop clippin from dc offset)
+    rChann = filterOut * 32768 * gain[5]; //multiply it by 32768 * 0.5 (stop clippin from dc offset)
     short s = (short) (rChann); //cast to a float
     temp.channel[0] = s; //set the right channel to the new value
     MCBSP_write(DSK6713_AIC23_DATAHANDLE, temp.combo); //ship it
