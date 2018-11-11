@@ -20,9 +20,9 @@
 DSK6713_AIC23_CodecHandle hCodec;                           // Codec handle
 DSK6713_AIC23_Config config = DSK6713_AIC23_DEFAULTCONFIG;  // Codec configuration with default settings
 
-long long tempOmega[11];
+int tempOmega[11];
 int index = 0;
-long long filterOut = 0;
+int filterOut = 0;
 interrupt void serialPortRcvISR(void);
 
 void main()
@@ -65,7 +65,7 @@ interrupt void serialPortRcvISR()
     // Note that right channel is in temp.channel[0]
     // Note that left channel is in temp.channel[1]
 
-    long long rChann = ((long long) (temp.channel[0])); //
+    int rChann = ((int) (temp.channel[0])) << 12 ; // turn the input which is q15 into a q27 number (because q12 * q15 = q27)
 
     //circular indexing
      index++;
@@ -79,11 +79,12 @@ interrupt void serialPortRcvISR()
         int arrayIndex = index -  i;
         if (arrayIndex < 0) arrayIndex += NL;
         // multiply by acoeffs and by negative 1.
-        tempOmega[index] += ((tempOmega[arrayIndex] * DEN[i]));
+        tempOmega[index] += ((tempOmega[arrayIndex]) * (DEN[i]));
     }
 
     tempOmega[index] *= -1;
-    tempOmega[index] += rChann;
+    tempOmega[index] += rChann; // now since rChann is q27, we can add this since the decimal is in the same place
+    tempOmega[index] = tempOmega[index] >> 12 ; // turns it back into a q-15 from a q-27
 
     // this for loop is essentially the same thing, using the b coeffs
     int j;
@@ -91,12 +92,13 @@ interrupt void serialPortRcvISR()
     {
         int arrayIndex2 = index -  j;
         if (arrayIndex2 < 0) arrayIndex2 += NL;
-        filterOut += (NUM[j]*tempOmega[arrayIndex2]); //filter output
+        filterOut += ((NUM[j])*(tempOmega[arrayIndex2])); //filter output filterOut += ((NUM[j] >> 9)*(tempOmega[arrayIndex2] >> 7));
     }
 
-    rChann = filterOut >> 20;
+    rChann = filterOut >> 12; //shift back to q15
 //    short s = (short) (rChann); //cast to a float
     temp.channel[0] = rChann; //set the right channel to the new value
+    temp.channel[1] = 0; //set the right channel to the new value
     MCBSP_write(DSK6713_AIC23_DATAHANDLE, temp.combo); //ship it
     filterOut = 0;
 
