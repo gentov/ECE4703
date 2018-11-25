@@ -37,17 +37,28 @@ _iirDFII_asm:
 
 			MV		.S1	A4, A1		; copy count to register A1 (input)
 			ZERO	.L1	A9			; zero accumulator (index = 0)
+			ZERO 	.L1	A16			; This will hold the value to put into tempOmega[index]
 			ADD	 	.S1 A9, 1, A9
 			INTSP 	.L1 A1, A0 ; a1 == input2 just so we're clear. Now input2 is float input
 
-LOOP:
-			SUB		.S1 A5, A9, A11  	; get element from first array
-			CMPGT 	.L1	A11, -1, A2 	; see if A11 (arrayIndex) less than 0, set the result to register A12
-			[A2] 	B 		.S2 	COEFFMULT
+LOOP1:
+			SUB		.S1 A5, A9, A11  	; get element from first array A11 is the arrayIndex
+			CMPGT 	.L1	A11, -1, A2 	; see if A11 (arrayIndex) greater than -1, set the result to register A2
+			[A2] 	B 		.S2 	DENMULT
 			NOP		5
 			ADD 	.S1 A11, B4, A11
-COEFFMULT:
-;ARRAYS?!!
+			;we still have to go to denmult here, right?
+DENMULT:		;I'm probably missing som NOPs
+;ARRAYS?!!	       ;LDW		.D1	*+A6[A9], A13	; get element from second array. A13 holds DEN2[i]
+		       ;LDW		.D1	*+A12[A11], A14 ;A14 holds tempOmega[arrayIndex]
+		       ;MPYSP		.M2	A14, A13, A15 ; A15 holds the product
+		       ;ADDSP		.L2	A16, A15, A16 ; A16 holds (tempOmega[arrayIndex] * DEN2[i])
+		       ;MPYSP		.M2	A16, -1, A16 ;  Multiply A16 by -1
+		       ;STW		.D1	A16, *+A12[A5] ;Store A16 into tempOmega[index]
+		       ;ADDSP 		.L2	A9, 1, A9	
+		       ;CMPLT 	.L1	A9, B4, A2 	; see if A9 (i) is less than order
+		       ;[A2] 	B 		.S2 	LOOP1 ;if i is less than order, we go on and repeat loop
+		       
 			LDW		.D1	*A12++, A13	; get element from second array
 			NOP		4				; wait for data
 			MPYSP A7	; multiply
@@ -55,7 +66,7 @@ COEFFMULT:
 			ADDSP	.L1	A7, A8, A8	; accumulate
 			NOP		3
 			SUB		.S1	A1, 1, A1	; decrement counter
-	[A1]	B	.S2	LOOP			; conditional branch
+	[A1]	B	.S2	LOOP1			; conditional branch
 			NOP 	5
 			; conditional branch occurs here
 			MV		.S1	A8, A4		; put result in proper register
