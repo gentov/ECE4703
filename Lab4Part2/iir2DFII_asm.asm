@@ -10,6 +10,7 @@
 			.ref  	_input2
 			.ref _arrayIndex
 			.ref _tempOmega
+			;.ref 	_j 
 _iirDFII_asm:
 			MVKL	.S1 _index, A5
 			MVKH 	.S1 _index, A5
@@ -25,6 +26,9 @@ _iirDFII_asm:
 
 			MVKL	.S1 _i, A9
 			MVKH 	.S1 _i, A9
+			
+			;MVKL	.S1 _j, A13
+			;MVKH 	.S1 _j, A13
 
 			MVKL	.S1 _input2, A10
 			MVKH 	.S1 _input2, A10
@@ -58,7 +62,9 @@ DENMULT:		;I'm probably missing som NOPs
 		       ;ADDSP 		.L2	A9, 1, A9	
 		       ;CMPLT 	.L1	A9, B4, A2 	; see if A9 (i) is less than order
 		       ;[A2] 	B 		.S2 	LOOP1 ;if i is less than order, we go on and repeat loop
-		       
+;LOOP2:	
+;NUMMULT: ;Can we reuse the same variables from above instead of allocating new memory?
+		       ;
 			LDW		.D1	*A12++, A13	; get element from second array
 			NOP		4				; wait for data
 			MPYSP A7	; multiply
