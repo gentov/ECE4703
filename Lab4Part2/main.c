@@ -24,7 +24,7 @@ float tempOmega[11];
 int index = 0;
 float filterOut;
 interrupt void serialPortRcvISR(void);
-inline short iirDFII_asm(short input, short order);
+short iirDFII_asm(short input, short order);
 void main()
 {
 
