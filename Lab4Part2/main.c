@@ -22,7 +22,7 @@ DSK6713_AIC23_Config config = DSK6713_AIC23_DEFAULTCONFIG;  // Codec configurati
 
 float tempOmega[11];
 int index = 0;
-float filterOut;
+float filterOut = 0;
 interrupt void serialPortRcvISR(void);
 short iirDFII_asm(short input, short order);
 void main()

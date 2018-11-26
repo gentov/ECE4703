@@ -4,9 +4,8 @@
 			.def 	_iirDFII_asm
 			.ref  	_index
 			.ref	_DEN2
-			.ref     _NUM2
-			.ref 	_filterOut
-			.ref _tempOmega
+			.ref    _NUM2
+			.ref 	_tempOmega
 
 _iirDFII_asm:
 			MVKL	.S1 _index, A5
@@ -17,18 +16,6 @@ _iirDFII_asm:
 
 			MVKL	.S1 _NUM2, A7
 			MVKH 	.S1 _NUM2, A7
-
-			MVKL	.S1 _filterOut, A8
-			MVKH 	.S1 _filterOut, A8
-
-			MVKL	.S1 _i, A9
-			MVKH 	.S1 _i, A9
-
-			MVKL	.S1 _input2, A10
-			MVKH 	.S1 _input2, A10
-
-			MVKL	.S1 _arrayIndex, A11
-			MVKH 	.S1 _arrayIndex, A11
 
 			MVKL	.S1 _tempOmega, A12
 			MVKH 	.S1 _tempOmega, A12
@@ -70,7 +57,7 @@ LOOP2:
 			SUB		.S1 A5, A9, A11  	; get element from first array A11 is the arrayIndex
 			NOP 	 2
 			CMPGT 	.L1	A11, -1, A2 	; see if A11 (arrayIndex) greater than -1, set the result to register A2
-			[A2] 	B 		.S2 	DENMULT
+			[A2] 	B 		.S2 	NUMMULT
 			NOP		5
 			ADD 	.S1 A11, B4, A11
 			NOP 	 2
