@@ -24,7 +24,7 @@ float tempOmega[11];
 int index = 0;
 float filterOut = 0;
 interrupt void serialPortRcvISR(void);
-short iirDFII_asm(short input, short order);
+float iirDFII_asm(float input, short order);
 void main()
 {
 
@@ -65,7 +65,7 @@ interrupt void serialPortRcvISR()
     // Note that right channel is in temp.channel[0]
     // Note that left channel is in temp.channel[1]
 
-    short rChann = (temp.channel[0]); // Cast to a float, then divide by 32768 (16 bit datatype)
+    float rChann = ((float)(temp.channel[0])/32768); // Cast to a float, then divide by 32768 (16 bit datatype)
 
     //circular indexing
      index++;
@@ -73,9 +73,9 @@ interrupt void serialPortRcvISR()
      tempOmega[index] = 0;
 
 
-    short s = iirDFII_asm(rChann, NL2); //multiply it by 32768 * 0.5 (stop clippin from dc offset)
-    temp.channel[0] = s; //set the right channel to the new value
-    temp.channel[1] = 0; //set the right channel to the new value
+    float s = iirDFII_asm(rChann, NL2); //multiply it by 32768 * 0.5 (stop clippin from dc offset)
+    temp.channel[0] = (short)(s * 32768); //set the right channel to the new value
+    //temp.channel[1] = 0; //set the right channel to the new value
     MCBSP_write(DSK6713_AIC23_DATAHANDLE, temp.combo); //ship it
     filterOut = 0;
 
@@ -91,7 +91,7 @@ interrupt void serialPortRcvISR()
 //        int arrayIndex = index - i;
 //        if (arrayIndex < 0)
 //            arrayIndex += order;
-//        // multiply by acoeffs and by negative 1.
+//        // denmult
 //        tempOmega[index] += ((tempOmega[arrayIndex] * DEN2[i]));
 //        tempOmega[index] *= -1;
 //    }

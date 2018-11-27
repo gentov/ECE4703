@@ -10,6 +10,8 @@
 _iirDFII_asm:
 			MVKL	.S1 _index, A5
 			MVKH 	.S1 _index, A5
+			LDW		.D1 *A5, A5
+			NOP 4
 
 			MVKL	.S1 _DEN2, A6
 			MVKH 	.S1 _DEN2, A6
@@ -20,24 +22,42 @@ _iirDFII_asm:
 			MVKL	.S1 _tempOmega, A12
 			MVKH 	.S1 _tempOmega, A12
 
-			MV		.S1	A4, A1		; copy count to register A1 (input)
+			MV		.S1	B4, A1		; copy count to register A1 (input)
 			ZERO	.L1	A9			; zero accumulator (index = 0)
 			ZERO 	.L1	A3			; This will hold the value to put into tempOmega[index]
-			ADD	 	.S1 A9, 1, A9
+			ZERO	.L1	A11			; zero arrayIndex
+			ZERO 	.L1	A3			; This will hold the value to put into tempOmega[index]
+			ADD	 	.S1 A9, 1, A9   ; increment i
 			NOP 	 2
-			INTSP 	.L1 A1, A0 ; a1 == input2 just so we're clear. Now input2 is float input
+			;;INTSP 	.L1 A1, A0 ; a1 == input2 just so we're clear. Now input2 is float input
+			;
 
 LOOP1:
-			SUB		.S1 A5, A9, A11  	; A11 is the arrayIndex (index - i)
-			NOP 	 2
-			CMPGT 	.L1	A11, -1, A2 	; see if A11 (arrayIndex) greater than -1, set the result to register A2
-			[A2] 	B 		.S2 	DENMULT
-			NOP		5
-			ADD 	.S1 A11, B4, A11
-			;we still have to go to denmult here, right?
-DENMULT:		;I'm probably missing som NOPs
-;ARRAYS?!!
-			   LDW		.D1	*+A6[A9], A13	; get element from second array. A13 holds DEN2[i]
+
+			SUB A5, A9, A11; arrayIndex = index - i
+			CMPLT .L1 A11, 0, A2
+		    [!A2] B .S2  DENMULT
+		    NOP 5
+			ADD .L1 A11, B4, A11; ; ARRAYINDEX SHUOLD NEVER BE MORE THAN 10 THOUGH
+
+
+
+			;CMPGT 	.L1	A9, A5, A2 	;
+			; If a9 > a5, then would underflow. So if A9 > A5...
+			;[!A2] 	B 		.S2 	SKIPADD
+			;ZERO    .L1 A11 ; reset ArrayIndex
+			;ADD     .S1 A11, B4, A11 ; add order to ArrayIndex
+			;SUB     .S1 A11, A9, A11 ; sub A9 from A11
+			;ADD     .S1 A11, A5, A11 ; add a5 from a11
+			;NOP		5
+
+
+
+
+
+DENMULT:
+		;      MPYSP	.M1  *+A6[A9], *+A12[A11], *+A12[A5] ;
+		       LDW		.D1	*+A6[A9], A13	; get element from second array. A13 holds DEN2[i]
 		       LDW		.D1	*+A12[A11], A14 ;A14 holds tempOmega[arrayIndex]
 		       MPYSP	.M1  A14, A13, A15 ; A15 holds the product
 		       NOP 	 3
@@ -45,22 +65,43 @@ DENMULT:		;I'm probably missing som NOPs
 		       NOP 	 3
 		       MV	.L2	 A3, B1 ;  Multiply A3 by -1
 		       ZERO .L1  A3
-		       SUB		.S1 A3, B1, A3  	; A11 is the arrayIndex (index - i)
+		       SUB		.S1 A3, B1, A3
 		       NOP 	 5
 		       STW		.D1	A3, *+A12[A5] ;Store A3 into tempOmega[index]
-		       ADD 	.L1	A9, 1, A9
+		       ADD 	.L1	A9, 1, A9 ; increment i
 		       NOP 	 3
-		       CMPLT 	.L1	A9, B4, A2 	; see if A9 (i) is less than order
-		       [A2] 	B 		.S2 	LOOP1 ;if i is less than order, we go on and repeat loop
+		       CMPGT 	.L1	A9, B4, A2 	; see if A9 (i) is less than order ;; NEED GREATER THAN OR EQUAL TOO
+		       [!A2] 	B 		.S2 	LOOP1 ;if i is less than order, we go on and repeat loop
+			   NOP 5
+
+
+		       ;BEFORE LOOP TWO WE MUST ADD INPUT2 TO TEMPOMEGA[INDEX]
+		       LDW		.D1	*+A12[A5], A10
+		       ADDSP	.L1	A10, A4, A10 ; tempOmega[index] += input2
+		       STW		.D1	A10, *+A12[A5] ;Store A3 into tempOmega[index]
+		       NOP 	 5
+			   ZERO		.L1	A9
+			   ZERO		.L1	A11 ; reset arrayIndex
 LOOP2:
-			ZERO	.L1	A9
-			SUB		.S1 A5, A9, A11  	; get element from first array A11 is the arrayIndex
-			NOP 	 2
-			CMPGT 	.L1	A11, -1, A2 	; see if A11 (arrayIndex) greater than -1, set the result to register A2
-			[A2] 	B 		.S2 	NUMMULT
-			NOP		5
-			ADD 	.S1 A11, B4, A11
-			NOP 	 2
+
+			SUB A5, A9, A11; arrayIndex = index - 1
+			CMPLT .L1 A11, 0, A2
+		    [!A2] B .S2  NUMMULT
+		    NOP	5
+			ADD A11, B4, A11;
+
+
+		;CMPGT 	.L1	A9, A5, A2 	;
+			;[!A2] 	B 		.S2 	SKIPADD1
+			;ZERO    .L1 A11 ; reset ArrayIndex
+			;ADD     .S1 A11, B4, A11 ; add order to ArrayIndex
+			;SUB     .S1 A11, A9, A11 ; sub A9 from A11
+			;ADD     .S1 A11, A5, A11 ; sub a5 from a11
+			;NOP		5
+
+;SKIPADD1:	SUB 	.S1 A9, A5, A11 ; int arrayindex = index - i
+
+
 NUMMULT: ;Can we reuse the same variables from above instead of allocating new memory?
 		       ;
 			   LDW		.D1	*+A7[A9], A13	; get element from second array. A13 holds NUM2[i]
@@ -69,12 +110,11 @@ NUMMULT: ;Can we reuse the same variables from above instead of allocating new m
 		       NOP	3
 		       ADDSP	.L1	A8, A15, A8 ; A8 (filterOut) holds (tempOmega[arrayIndex] * DEN2[i])
 		       NOP	3
-		       ADD 	.L1	A9, 1, A9
-		       NOP	3
+		       ADD 	.L1	A9, 1, A9 ; increment "j"
+		       NOP	5
 		       CMPLT 	.L1	A9, B4, A2 	; see if A9 (i) is less than order
 		       [A2] 	B 		.S2 	LOOP2 ;if i is less than order, we go on and repeat loop
-
-			;BITSHIFT HERE, WE STILL NEED TO DO!
+			   NOP 5
 			MV	.S1	A8,A4
 			B	B3
 			NOP	5
