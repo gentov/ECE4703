@@ -26,7 +26,7 @@ _iirDFII_asm:
 			ADD	 	.S1 A9, 1, A9
 			NOP 	 2
 			INTSP 	.L1 A1, A0 ; a1 == input2 just so we're clear. Now input2 is float input
-
+			; HAVE TO DIVIDE BY 32768... MAYBE WE SHOULD JUST PASS IN FLOAT?
 LOOP1:
 			SUB		.S1 A5, A9, A11  	; A11 is the arrayIndex (index - i)
 			NOP 	 2
@@ -37,7 +37,9 @@ LOOP1:
 			;we still have to go to denmult here, right?
 DENMULT:		;I'm probably missing som NOPs
 ;ARRAYS?!!
-			   LDW		.D1	*+A6[A9], A13	; get element from second array. A13 holds DEN2[i]
+; Actually, I'm pretty sure we can do most of this with SOMETHING LIKE:
+		;      MPYSP	.M1  *+A6[A9], *+A12[A11], *+A12[A5] ; 
+		       LDW		.D1	*+A6[A9], A13	; get element from second array. A13 holds DEN2[i]
 		       LDW		.D1	*+A12[A11], A14 ;A14 holds tempOmega[arrayIndex]
 		       MPYSP	.M1  A14, A13, A15 ; A15 holds the product
 		       NOP 	 3
@@ -52,8 +54,12 @@ DENMULT:		;I'm probably missing som NOPs
 		       NOP 	 3
 		       CMPLT 	.L1	A9, B4, A2 	; see if A9 (i) is less than order
 		       [A2] 	B 		.S2 	LOOP1 ;if i is less than order, we go on and repeat loop
+		       
+		       ;BEFORE LOOP TWO WE MUST ADD INPUT2 TO TEMPOMEGA[INDEX]
+		       ;ADDSP	.L1	*+A12[A5], A0, *+A12[A5] ; tempOmega[index] += input2
 LOOP2:
 			ZERO	.L1	A9
+			;ZERO	.L1	A11 ; reset arrayIndex
 			SUB		.S1 A5, A9, A11  	; get element from first array A11 is the arrayIndex
 			NOP 	 2
 			CMPGT 	.L1	A11, -1, A2 	; see if A11 (arrayIndex) greater than -1, set the result to register A2
