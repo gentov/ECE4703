@@ -26,6 +26,9 @@ _iirDFII_asm:
 			ZERO	.L1	A9			; zero accumulator (index = 0)
 			ZERO 	.L1	A3			; This will hold the value to put into tempOmega[index]
 			ZERO	.L1	A11			; zero arrayIndex
+			;I think we need to zero filterOut.... since filter out isn't global here, we just keep it in a register and add
+			; we never reset that register.
+			ZERO	.L1	A8
 			ADD	 	.S1 A9, 1, A9   ; increment i
 			NOP 	 2
 			;;INTSP 	.L1 A1, A1 ; a1 == input2 just so we're clear. Now input2 is float input
