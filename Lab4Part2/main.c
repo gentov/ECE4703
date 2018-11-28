@@ -23,8 +23,9 @@ DSK6713_AIC23_Config config = DSK6713_AIC23_DEFAULTCONFIG;  // Codec configurati
 float tempOmega[11];
 int index = 0;
 float filterOut = 0;
+float rChann [11] = {.1, -.2, .3, -.4, .5, -.6, .7, -.8, .9, -.11, .12};
 interrupt void serialPortRcvISR(void);
-float iirDFII_asm(float input, short order);
+float iirDFII_asm(float input, short order, float tempOmega[]);
 void main()
 {
 
@@ -65,17 +66,17 @@ interrupt void serialPortRcvISR()
     // Note that right channel is in temp.channel[0]
     // Note that left channel is in temp.channel[1]
 
-    float rChann = ((float)(temp.channel[0])/32768); // Cast to a float, then divide by 32768 (16 bit datatype)
+   // float chanTheMan = ((float)(temp.channel[0])/(32768)); // Cast to a float, then divide by 32768 (16 bit datatype)
 
     //circular indexing
      index++;
      index = index%NL2;
-     tempOmega[index] = 0;
+     tempOmega[index] = 0.0;
 
 
-    float s = iirDFII_asm(rChann, NL2); //multiply it by 32768 * 0.5 (stop clippin from dc offset)
+    float s = iirDFII_asm(((float)(temp.channel[0])/(32768)), NL2,tempOmega); //multiply it by 32768 * 0.5 (stop clippin from dc offset)
     temp.channel[0] = (short)(s * 32768); //set the right channel to the new value
-    //temp.channel[1] = 0; //set the right channel to the new value
+   // temp.channel[1] = 0; //set the right channel to the new value
     MCBSP_write(DSK6713_AIC23_DATAHANDLE, temp.combo); //ship it
     filterOut = 0;
 
