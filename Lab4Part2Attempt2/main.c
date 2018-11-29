@@ -26,6 +26,15 @@ float filterOut = 0;
 float rChann [11] = {-.1, .01, -.025, .5 , -.1, .45, -.6, .5, -.1, .1, -.3};
 interrupt void serialPortRcvISR(void);
 float iirDFII_asm(float input, short order, float* tempOmega);
+
+int circIndex (int a, int b, int order)
+{
+    int arrayIndex = a - b;
+    if (arrayIndex < 0)
+        arrayIndex += order;
+    return arrayIndex;
+}
+
 void main()
 {
 
@@ -64,8 +73,13 @@ interrupt void serialPortRcvISR()
 
     float tempOmegaOrg[11];
     int y;
+
+    index++;
+    index = index%NL2;
+    tempOmega[index] = 0.0;
+
     for(y = 0; y < 11; y++){ // shuffle the entire array up one.
-        tempOmegaOrg[y] = tempOmega[(((index-y)%NL2) + NL2 ) % NL2];
+        tempOmegaOrg[y] = tempOmega[circIndex(index,y,NL2)];
     }
 
 
@@ -79,7 +93,7 @@ interrupt void serialPortRcvISR()
     float s = iirDFII_asm(CTM, NL2, tempOmegaOrg); //multiply it by 32768 * 0.5 (stop clippin from dc offset)
 
     temp.channel[0] = (short)(s * 32768); //set the right channel to the new value
-   // temp.channel[1] = 0; //set the right channel to the new value
+    temp.channel[1] = 0; //set the right channel to the new value
     MCBSP_write(DSK6713_AIC23_DATAHANDLE, temp.combo); //ship it
     filterOut = 0;
 }
