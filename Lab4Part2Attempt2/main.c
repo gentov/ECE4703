@@ -93,7 +93,7 @@ interrupt void serialPortRcvISR()
     float s = iirDFII_asm(CTM, NL2, tempOmegaOrg); //multiply it by 32768 * 0.5 (stop clippin from dc offset)
 
     temp.channel[0] = (short)(s * 32768); //set the right channel to the new value
-    temp.channel[1] = 0; //set the right channel to the new value
+    temp.channel[1] = (short)(s * 32768);  //set the right channel to the new value
     MCBSP_write(DSK6713_AIC23_DATAHANDLE, temp.combo); //ship it
     filterOut = 0;
 }

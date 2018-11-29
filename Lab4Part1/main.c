@@ -16,7 +16,7 @@
 #include "dsk6713.h"
 #include "dsk6713_aic23.h"
 #include "fdacoefs.h"
-#include "fdacoefs2.h"
+#include <fdacoefs2.h>
 DSK6713_AIC23_CodecHandle hCodec;                           // Codec handle
 DSK6713_AIC23_Config config = DSK6713_AIC23_DEFAULTCONFIG;  // Codec configuration with default settings
 
@@ -75,7 +75,7 @@ interrupt void serialPortRcvISR()
 
     short s = iirDFII(rChann, NL2); //multiply it by 32768 * 0.5 (stop clippin from dc offset)
     temp.channel[0] = s; //set the right channel to the new value
-    temp.channel[1] = 0; //set the right channel to the new value
+    temp.channel[1] = s; //set the right channel to the new value
     MCBSP_write(DSK6713_AIC23_DATAHANDLE, temp.combo); //ship it
     filterOut = 0;
 
