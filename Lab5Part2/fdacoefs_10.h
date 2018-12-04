@@ -24,8 +24,8 @@
  *   Use the Filter Design & Analysis Tool to design accurate
  *   single-precision filter coefficients.
  */
-const int BL = 32;
-const float B[32] = {
+const int BL = 11;
+const float B[11] = {
    -0.09637627751,4.418934159e-17,   0.1671167463,  -0.1486474574, -0.08771334589,
      0.2357762456, -0.08771334589,  -0.1486474574,   0.1671167463,4.418934159e-17,
-   -0.09637627751, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+   -0.09637627751};
