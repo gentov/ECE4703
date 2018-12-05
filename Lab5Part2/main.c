@@ -50,8 +50,7 @@ DSK6713_AIC23_Config config = DSK6713_AIC23_DEFAULTCONFIG; // Codec configuratio
         short yyy = 0;
         COMPLEX h[N];// array of complex coefficients
         float DELTA = 2.0 * PI / N;// makes calculating twiddles easier
-        short iw[N / 2],
-ih[N], iapp[N]; // indices for bit reversal (these arrays are unnecessarily large)
+        short iw[N / 2], ih[N], iapp[N], iprod[N]; // indices for bit reversal (these arrays are unnecessarily large)
 int i, n;
 
 //k = N - (10)
@@ -64,6 +63,7 @@ float pingOut[K];
 float pongOut[K];
 COMPLEX app[N];
 COMPLEX prodRes[N];
+
 
 inline COMPLEX complexMult(COMPLEX a, COMPLEX b)
 {
@@ -125,7 +125,7 @@ void main(void)
     {
         //h[i].re = cos(PI/2*i);
         if (i < BL)
-            h[i].re = B[i]; // fill with B[i], rest with zeros
+            h[i].re = B[i]; // fill with B[i], pad the rest with zeros to match length N
         else
             h[i].re = 0;
         h[i].im = 0;
@@ -152,7 +152,6 @@ void main(void)
             switchBuffer = 0;    // clear flag
             if (!pingActive)
             { // Pong
-              //PROCESS THIS BITCH
               // Step one: Prepend pongInZ to pongIn
                 COMPLEX* app = malloc(N * sizeof(COMPLEX));
                 memcpy(app, pongInZ, (BL - 1) * sizeof(COMPLEX));
@@ -169,6 +168,25 @@ void main(void)
                 {
                     prodRes[k] = complexMult(app[k], h[k]);
                 }
+                // now have to Inverse FFT prodRes. Just reverse IM and RE of input and run it thru FFT again
+                int l;
+                for (l = 0; l < N; l++)
+                {
+                    float tempIm;
+                    tempIm = prodRes[k].im;
+                    prodRes[k].im = prodRes[k].re;
+                    prodRes[k].re = tempIm;
+                }
+
+                cfftr2_dit(prodRes, w, N); //TI floating-pt complex FFT. Read comments at beginning of code.
+                digitrev_index(iprod, N, RADIX); //produces index for bitrev() X
+                bitrev(prodRes, iprod, N);       //freq scrambled->bit-reverse X
+
+                //write last K samples of prodRes to output buffer
+                memcpy(pongOut, prodRes + (N - K), K * sizeof(COMPLEX));
+                // put last M - 1 values of input into PingInZ
+                memcpy(pongInZ, pongIn + (N - K), (BL - 1) * sizeof(COMPLEX));
+
             }
             else
             {    // Ping
@@ -182,12 +200,28 @@ void main(void)
                 digitrev_index(iapp, N, RADIX);  //produces index for bitrev() X
                 bitrev(app, iapp, N);            //freq scrambled->bit-reverse X
 
-                //compute the product of the app and h
-                int k;
-                for (k = 0; k < N; k++)
+                // now have to Inverse FFT prodRes. Just reverse IM and RE of input and run it thru FFT again
+                int l;
+                for (l = 0; l < N; l++)
                 {
-                    prodRes[k] = complexMult(app[k], h[k]);
+                    float tempIm;
+                    tempIm = prodRes[l].im;
+                    prodRes[l].im = prodRes[l].re;
+                    prodRes[l].re = tempIm;
                 }
+
+                cfftr2_dit(prodRes, w, N); //TI floating-pt complex FFT. Read comments at beginning of code.
+                digitrev_index(iprod, N, RADIX); //produces index for bitrev() X
+                bitrev(prodRes, iprod, N);       //freq scrambled->bit-reverse X
+
+
+                //write last K samples of prodRes to output buffer
+                memcpy(pingOut, prodRes + (N - K) , K * sizeof(COMPLEX));
+
+
+                // put last M - 1 values of input into PingInZ
+                memcpy(pingInZ, pingIn + (N - K), (BL - 1) * sizeof(COMPLEX));
+
             }
 
             // Check if flag is still == 0. If not, it means system is not running in real-time (error)
@@ -211,7 +245,7 @@ interrupt void serialPortRcvISR()
     temp.combo = MCBSP_read(DSK6713_AIC23_DATAHANDLE);
 
     float rChann = (float) ((temp.channel[0]) / (32768.0));
-    if (globalIndex == N)
+    if (globalIndex == K)            // we changed this from N to K. ???
     {
         globalIndex = 0;
         switchBuffer = 1;
@@ -234,12 +268,12 @@ interrupt void serialPortRcvISR()
 
     if (!pingActive)
     { // Pong
-        pongIn[globalIndex].re = temp.channel[0];
+        pongIn[globalIndex].re = rChann;
         temp.channel[0] = pongOut[globalIndex] * 32768;
     }
     else
     {    // Ping
-        pingIn[globalIndex].re = temp.channel[0];
+        pingIn[globalIndex].re = rChann;
         temp.channel[0] = (pingOut[globalIndex]) * 32768;
     }
     // Note that right channel is in temp.channel[0]
