@@ -146,7 +146,7 @@ all: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 Lab5Part2.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C6000 Linker'
-	"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/bin/cl6x" -mv6713 --abi=coffabi -Ooff -g --diag_wrap=off --diag_warning=225 --display_error_number --mem_model:const=far --mem_model:data=far -z --stack_size=0x400 -m"Lab5Part2.map" --heap_size=0x400 -i"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/lib" -i"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/include" --reread_libs --warn_sections --diag_wrap=off --display_error_number --xml_link_info="Lab5Part2_linkInfo.xml" --rom_model -o "Lab5Part2.out" $(ORDERED_OBJS)
+	"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/bin/cl6x" -mv6713 --abi=coffabi -O0 -g --diag_wrap=off --diag_warning=225 --display_error_number --mem_model:const=far --mem_model:data=far -z --stack_size=0x400 -m"Lab5Part2.map" --heap_size=0x400 -i"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/lib" -i"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/include" --reread_libs --warn_sections --diag_wrap=off --display_error_number --xml_link_info="Lab5Part2_linkInfo.xml" --rom_model -o "Lab5Part2.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
