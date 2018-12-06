@@ -10,13 +10,12 @@
 #include "dsk6713_led.h"
 #include "dsk6713.h"
 #include "dsk6713_aic23.h"
-#include "fdacoefs_10.h"
-#include <stdbool.h>
+#include "fdacoefs_8_n.h"
 
 #define N 32
 #define RADIX 2
 #define PI 3.14159265358979
-#define K 22
+#define K 25
 
 DSK6713_AIC23_CodecHandle hCodec;                           // Codec handle
 DSK6713_AIC23_Config config = DSK6713_AIC23_DEFAULTCONFIG; // Codec configuration with default settings
@@ -45,10 +44,9 @@ DSK6713_AIC23_Config config = DSK6713_AIC23_DEFAULTCONFIG; // Codec configuratio
         void cfftr2_dit(COMPLEX*, COMPLEX*, short);
         void bitrev(COMPLEX*, short*, int);
         void digitrev_index(short*, int, int);
-        bool switchBuffer = 0;
-        bool pingActive = 1;// Zero is Ping, One is Pong. Active means its in the output side
+        int switchBuffer = 0;
+        int pingActive = 1;// Zero is Ping, One is Pong. Active means its in the output side
 // global variables
-        short xxx = 0;
         COMPLEX w[N / RADIX];// array of complex twiddle factors
         COMPLEX w_conj[N / RADIX];// array of complex conj of the complex twiddle factors,
 // Recall how decimation in time works. The algorithms separates
@@ -61,19 +59,19 @@ DSK6713_AIC23_Config config = DSK6713_AIC23_DEFAULTCONFIG; // Codec configuratio
         COMPLEX h[N];// array of complex coefficients
         float DELTA = 2.0 * PI / N;// makes calculating twiddles easier
         short iw[N / 2],
-ih[N], iapp[N], iprod[N]; // indices for bit reversal (these arrays are unnecessarily large)
+ih[N], iapp[N], iprod[N], ix[N]; // indices for bit reversal (these arrays are unnecessarily large)
 int i, n;
 
 //k = N - (10)
 
-COMPLEX pingIn[K];
-COMPLEX pongIn[K];
-COMPLEX pingInZ[10]; //BL-1
-COMPLEX pongInZ[10];
-COMPLEX pingOut[K];
-COMPLEX pongOut[K];
-COMPLEX app[N];
-COMPLEX prodRes[N];
+COMPLEX pingIn[K] = {0,0};
+COMPLEX pongIn[K] = {0,0};
+COMPLEX pingInZ[7] = {0,0}; //BL-1
+COMPLEX pongInZ[7] = {0,0};
+COMPLEX pingOut[K] = {0,0};
+COMPLEX pongOut[K] = {0,0};
+COMPLEX app[N] = {0,0};
+COMPLEX prodRes[N] = {0,0};
 
 inline COMPLEX complexMult(COMPLEX a, COMPLEX b)
 {
@@ -127,6 +125,8 @@ void main(void)
     {
         ih[i] = -1;
         iapp[i] = -1;
+        ix[i] = -1;
+        //iprod[i] = -1;
     }
 
     // initialize complex FFT input array with fixed, known values
@@ -155,24 +155,25 @@ void main(void)
 
     while (1)                  // main loop - do nothing but wait for interrupts
     {
-        if (!switchBuffer)
-        {
-            continue;
-        }
+//        if (switchBuffer == 0)
+//        {
+//            continue;
+//        }
 
-        else
+        if(switchBuffer == 1)
         {
             switchBuffer = 0;    // clear flag
-            if (!pingActive)
-            { // Pong
+            if (pingActive == 1)
+            { // Pong is processing
               // Step one: Prepend pongInZ to pongIn
                 memcpy(app, pongInZ, (BL - 1) * sizeof(COMPLEX));
                 memcpy(&app[BL - 1], pongIn, K * sizeof(COMPLEX));
 
                 // Step 2: Take FFT of app =  [ponginZ, pongIn]
                 cfftr2_dit(app, w, N); //TI floating-pt complex FFT. Read comments at beginning of code.
-                digitrev_index(iapp, N, RADIX);  //produces index for bitrev() X
-                bitrev(app, iapp, N);            //freq scrambled->bit-reverse X
+                digitrev_index(ix, N, RADIX);     //produces index for bitrev() X
+                //digitrev_index(iapp, N, RADIX);  //produces index for bitrev() X
+                bitrev(app, ix, N);            //freq scrambled->bit-reverse X
 
                 //compute the product of the app and h
                 int k;
@@ -183,34 +184,36 @@ void main(void)
 
                 // The invFFT fill be calculated by calculating the complex conj. of the w coeffs, using those, then dividing outputs by N
                 cfftr2_dit(prodRes, w_conj, N); //TI floating-pt complex FFT. Read comments at beginning of code.
-                digitrev_index(iprod, N, RADIX); //produces index for bitrev() X
-                bitrev(prodRes, iprod, N);       //freq scrambled->bit-reverse X
+                digitrev_index(ix, N, RADIX);     //produces index for bitrev() X
+                //digitrev_index(iprod, N, RADIX); //produces index for bitrev() X
+                bitrev(prodRes, ix, N);       //freq scrambled->bit-reverse X
                 // scale output by N
                 int l;
                 for (l = 0; l < N; l++)
                 {
-                    prodRes[l].im = (prodRes[l].im / N);
-                    prodRes[l].re = (prodRes[l].re / N);
+                    prodRes[l].im /= N;
+                    prodRes[l].re /= N;
                 }
 
                 //write last K samples of prodRes to output buffer
                 memcpy(pongOut, &prodRes[N - K], K * sizeof(COMPLEX));
-                // put last M - 1 values of input into PingInZ
 
-                memcpy(pongInZ, &pongIn[N - K], (BL - 1) * sizeof(COMPLEX));
+                // put last M - 1 values of input into PingInZ
+                memcpy(pongInZ, &pongIn[K - (BL -1)], (BL - 1) * sizeof(COMPLEX));
 
             }
 
             else
 
-            {    // Ping
+            {    // Ping is processing
                 memcpy(app, pingInZ, (BL - 1) * sizeof(COMPLEX));
-                memcpy(&app[BL - 1], pingIn, K * sizeof(COMPLEX));
+                memcpy(&app[BL - 1], pingIn, (K) * sizeof(COMPLEX));
 
                 // Step 2: Take FFT of app =  [ponginZ, pongIn]
                 cfftr2_dit(app, w, N); //TI floating-pt complex FFT. Read comments at beginning of code.
-                digitrev_index(iapp, N, RADIX);  //produces index for bitrev() X
-                bitrev(app, iapp, N);            //freq scrambled->bit-reverse X
+                digitrev_index(ix, N, RADIX);     //produces index for bitrev() X
+                //digitrev_index(iapp, N, RADIX);  //produces index for bitrev() X //replaced iapp with ih
+                bitrev(app, ih, N);            //freq scrambled->bit-reverse X
 
                 int k;
                 for (k = 0; k < N; k++)
@@ -220,8 +223,8 @@ void main(void)
 
                 // The invFFT fill be calculated by calculating the complex conj. of the w coeffs, using those, then dividing outputs by N
                 cfftr2_dit(prodRes, w_conj, N); //TI floating-pt complex FFT. Read comments at beginning of code.
-                digitrev_index(iprod, N, RADIX); //produces index for bitrev() X
-                bitrev(prodRes, iprod, N);       //freq scrambled->bit-reverse X
+                digitrev_index(ix, N, RADIX);  //digitrev_index(iprod, N, RADIX); //produces index for bitrev() X
+                bitrev(prodRes, ih, N);       //freq scrambled->bit-reverse X
 
                 int l;
                 for (l = 0; l < N; l++)
@@ -234,13 +237,13 @@ void main(void)
                 memcpy(pingOut, &prodRes[N - K], K * sizeof(COMPLEX));
 
                 // put last M - 1 values of input into PingInZ
-                memcpy(pingInZ, &pingIn[N - K], (BL - 1) * sizeof(COMPLEX));
+                memcpy(pingInZ, &pingIn[K - (BL - 1)], (BL - 1) * sizeof(COMPLEX));
 
             }
 
             // Check if flag is still == 0. If not, it means system is not running in real-time (error)
 
-            if (switchBuffer)
+            if (switchBuffer == 1)
             {
                 printf("Game Over. You got dead.");
 
@@ -257,46 +260,54 @@ interrupt void serialPortRcvISR()
         short channel[2];
     } temp;
     temp.combo = MCBSP_read(DSK6713_AIC23_DATAHANDLE);
-
     float rChann = (float) ((temp.channel[0]) / (32768.0));
-    if (globalIndex == K)            // we changed this from N to K. ???
+
+
+    if (pingActive == 0)
+       { // Pong
+           pongIn[globalIndex].re = rChann;
+           pongIn[globalIndex].im = 0.0; // Set the imag part equal to zero. Is this needed? Maybe
+           temp.channel[0] = (short)((pingOut[globalIndex].re) * 32768);
+       }
+       else
+       {    // Ping
+           pingIn[globalIndex].re = rChann;
+           pingIn[globalIndex].im = 0.0; // Set the imag part equal to zero. Is this needed? Maybe
+           temp.channel[0] = (short)((pongOut[globalIndex].re) * 32768);
+       }
+
+    globalIndex++;
+
+    if (globalIndex >= K)            // we changed this from N to K. ???
     {
         globalIndex = 0;
         switchBuffer = 1;
-        pingActive = !pingActive;
+        if(pingActive == 1)
+        pingActive = 0;
 
-        // copy last M-1 points of PingIn to beginning of pongInZ
-        if (pingActive)
-        {
-            memcpy(pongInZ, &pingIn[K], (N - BL) * sizeof(COMPLEX));
-        }
+        else if(pingActive == 0)
+        pingActive = 1;
 
-        else
-        {
 
-            memcpy(pingInZ, &pongIn[K], (N - BL) * sizeof(COMPLEX));
-        }
+//        // copy last M-1 points of PingIn to beginning of pongInZ
+//        if (pingActive)
+//        {
+//            memcpy(pongInZ, &pingIn[K], (N - BL) * sizeof(COMPLEX));
+//        }
+//
+//        else
+//        {
+//
+//            memcpy(pingInZ, &pongIn[K], (N - BL) * sizeof(COMPLEX));
+//        }
 
     }
-    // if statement for choose
 
-    if (!pingActive)
-    { // Pong
-        pongIn[globalIndex].re = rChann;
-        pongIn[globalIndex].im = 0.0; // Set the imag part equal to zero. Is this needed? Maybe
-        temp.channel[0] = (pongOut[globalIndex].re) * 32768;
-    }
-    else
-    {    // Ping
-        pingIn[globalIndex].re = rChann;
-        pingIn[globalIndex].im = 0.0; // Set the imag part equal to zero. Is this needed? Maybe
-        temp.channel[0] = (pingOut[globalIndex].re) * 32768;
-    }
     // Note that right channel is in temp.channel[0]
-    // Note that left channel is in temp.channel[1]
-    temp.channel[1] = 0;
-    MCBSP_write(DSK6713_AIC23_DATAHANDLE, temp.combo); //ship it
-    globalIndex++;
+     // Note that left channel is in temp.channel[1]
+     temp.channel[1] = 0;
+     MCBSP_write(DSK6713_AIC23_DATAHANDLE, temp.combo); //ship it
+
 
 }
 

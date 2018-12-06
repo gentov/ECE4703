@@ -33,11 +33,7 @@ main.obj: R:/ECE4703_B18/C6xCSL/include/csl_mcbsphal.h
 main.obj: R:/ECE4703_B18/DSK6713/c6000/dsk6713/include/dsk6713_led.h
 main.obj: R:/ECE4703_B18/DSK6713/c6000/dsk6713/include/dsk6713.h
 main.obj: R:/ECE4703_B18/DSK6713/c6000/dsk6713/include/dsk6713_aic23.h
-main.obj: ../fdacoefs_10.h
-main.obj: C:/ti/ccsv7/tools/compiler/c6000_7.4.24/include/stdbool.h
-main.obj: C:/ti/ccsv7/tools/compiler/c6000_7.4.24/include/yvals.h
-main.obj: C:/ti/ccsv7/tools/compiler/c6000_7.4.24/include/stdarg.h
-main.obj: C:/ti/ccsv7/tools/compiler/c6000_7.4.24/include/_lock.h
+main.obj: ../fdacoefs_8_n.h
 
 ../main.c: 
 C:/ti/ccsv7/tools/compiler/c6000_7.4.24/include/stdio.h: 
@@ -72,8 +68,4 @@ R:/ECE4703_B18/C6xCSL/include/csl_mcbsphal.h:
 R:/ECE4703_B18/DSK6713/c6000/dsk6713/include/dsk6713_led.h: 
 R:/ECE4703_B18/DSK6713/c6000/dsk6713/include/dsk6713.h: 
 R:/ECE4703_B18/DSK6713/c6000/dsk6713/include/dsk6713_aic23.h: 
-../fdacoefs_10.h: 
-C:/ti/ccsv7/tools/compiler/c6000_7.4.24/include/stdbool.h: 
-C:/ti/ccsv7/tools/compiler/c6000_7.4.24/include/yvals.h: 
-C:/ti/ccsv7/tools/compiler/c6000_7.4.24/include/stdarg.h: 
-C:/ti/ccsv7/tools/compiler/c6000_7.4.24/include/_lock.h: 
+../fdacoefs_8_n.h: 
