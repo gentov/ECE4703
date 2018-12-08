@@ -29,7 +29,7 @@ float filterOut;
 float error;
 float BA[order];
 
-int mu = .4;
+float mu = .01;
 interrupt void serialPortRcvISR(void);
 
 void main()
