@@ -7,7 +7,7 @@
 
 #define CHIP_6713 1
 
-#define order 27
+#define order 15//system 1 was 30: system 2 was: 1 ,
 
 #include <stdio.h>
 #include <c6x.h>
@@ -22,14 +22,14 @@
 DSK6713_AIC23_CodecHandle hCodec;                           // Codec handle
 DSK6713_AIC23_Config config = DSK6713_AIC23_DEFAULTCONFIG; // Codec configuration with default settings
 
-float filter[order] = { 0 };
+float filter[order];
 //float b_adpt[order] = {0};
 int index = 0;
 float filterOut;
 float error;
 float BA[order];
 
-float mu = .01;
+float mu = .01; // system 1 was: .01, system 2 was0.0005,
 interrupt void serialPortRcvISR(void);
 
 void main()
@@ -52,7 +52,7 @@ void main()
     int k;
       for(k = 0; k<order; k++)
       {
-          BA[k] = 0.0;
+          BA[k] = 1.0;
           filter[k] = 0.0;
           error = 0.0;
       }
