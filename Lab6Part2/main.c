@@ -7,7 +7,7 @@
 
 #define CHIP_6713 1
 
-#define order 27//system 1 was 30: system 2 was: 55 ,
+#define order 100//system 1 was 30: system 2 was: 55 ,
 
 #include <stdio.h>
 #include <c6x.h>
@@ -29,7 +29,7 @@ float filterOut;
 float error;
 float BA[order];
 
-float mu = .01; // system 1 was: .01, system 2 was0.02,
+float mu = .5; // system 1 was: .01, system 2 was0.02,
 interrupt void serialPortRcvISR(void);
 
 void main()
@@ -80,8 +80,8 @@ interrupt void serialPortRcvISR()
     temp.combo = MCBSP_read(DSK6713_AIC23_DATAHANDLE);
     // Note that right channel is in temp.channel[0]
     // Note that left channel is in temp.channel[1]
-    float unKnownOut = (((float) (temp.channel[0])) / 32768); // Cast to a float, then divide by 32768 (16 bit datatype)
-    float filterIn = (((float) (temp.channel[1])) / 32768);
+    float unKnownOut = (((float) (temp.channel[1])) / 32768); // Cast to a float, then divide by 32768 (16 bit datatype)
+    float filterIn = (((float) (temp.channel[0])) / 32768);
 
     //circular indexing
     index++;

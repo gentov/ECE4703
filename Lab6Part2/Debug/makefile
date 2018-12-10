@@ -123,33 +123,33 @@ endif
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXE_OUTPUTS += \
-Lab6Part1.out \
+Lab6Part2.out \
 
 EXE_OUTPUTS__QUOTED += \
-"Lab6Part1.out" \
+"Lab6Part2.out" \
 
 BIN_OUTPUTS += \
-Lab6Part1.hex \
+Lab6Part2.hex \
 
 BIN_OUTPUTS__QUOTED += \
-"Lab6Part1.hex" \
+"Lab6Part2.hex" \
 
 
 # All Target
 all: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
-	@$(MAKE) --no-print-directory -Onone "Lab6Part1.out"
+	@$(MAKE) --no-print-directory -Onone "Lab6Part2.out"
 
 # Tool invocations
-Lab6Part1.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
+Lab6Part2.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C6000 Linker'
-	"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/bin/cl6x" -mv6713 --abi=coffabi -O3 -g --diag_wrap=off --diag_warning=225 --display_error_number --mem_model:const=far --mem_model:data=far -z --stack_size=0x400 -m"Lab6Part1.map" --heap_size=0x400 -i"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/lib" -i"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/include" --reread_libs --warn_sections --diag_wrap=off --display_error_number --xml_link_info="Lab6Part1_linkInfo.xml" --rom_model -o "Lab6Part1.out" $(ORDERED_OBJS)
+	"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/bin/cl6x" -mv6713 --abi=coffabi -O3 -g --diag_wrap=off --diag_warning=225 --display_error_number --mem_model:const=far --mem_model:data=far -z --stack_size=0x400 -m"Lab6Part2.map" --heap_size=0x400 -i"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/lib" -i"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/include" --reread_libs --warn_sections --diag_wrap=off --display_error_number --xml_link_info="Lab6Part2_linkInfo.xml" --rom_model -o "Lab6Part2.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
-Lab6Part1.hex: $(EXE_OUTPUTS)
+Lab6Part2.hex: $(EXE_OUTPUTS)
 	@echo 'Invoking: C6000 Hex Utility'
-	"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/bin/hex6x"  -o "Lab6Part1.hex" $(EXE_OUTPUTS__QUOTED)
+	"C:/ti/ccsv7/tools/compiler/c6000_7.4.24/bin/hex6x"  -o "Lab6Part2.hex" $(EXE_OUTPUTS__QUOTED)
 	@echo 'Finished building: $@'
 	@echo ' '
 
